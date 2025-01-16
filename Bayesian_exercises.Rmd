@@ -1,0 +1,306 @@
+---
+title: "Bayesian Statistics - Exercises"
+author: "Eeva Hökkä"
+date: "2025-01-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment 1: Frank the Cat
+
+This assignment is about likelihood, maximum likelihood estimation, and priors.
+
+Frank is mostly a sweet boi, but he has some behavioral issues that need attention.
+For example, Frank likes to jump on the kitchen counter which can be dangerous for a cat, especially next to the stove.
+To tackle the issue, Julia decides to first assess the full extent of the problem.
+She therefore installs a camera and counts how often per day Frank jumps on the kitchen counter.
+Here are the data from two weeks:
+
+```{r echo = FALSE}
+set.seed(249)
+jumps <- rpois(n = 14, lambda = 5)
+
+```
+
+
+\vspace{5mm}
+
+### a. Assuming the jumps are independent, what would be a good probability model for the number of times Frank jumps on the kitchen counter per day (0.5pts)? Let's call the number of jumps $k$. 
+
+The best probability model could be the Poisson model. (Discrete -> not multivariate -> Fixed amount of time (days) -> Not overdispersed data)
+
+Poisson distribution: p(K=k) = (lambda^k)*exp(-lambda)/k!; k>0
+
+
+\vspace{5mm}
+
+### b. Write down the likelihood function of the probability model (i.e., the likelihood function of the parameter of the model; 0.5pts).
+
+Likelihood function conceptually:
+L(jumps|problem behavior) [*is proportional to*] p(problem behavior|jumps)
+(p(problem behavior|jumps) = p(problem behavior & jumps)/p(jumps))
+
+
+\vspace{5mm}
+
+### c. What is the estimate of the expected number of times Frank jumps on the kitchen counter per day based on the collected data (0.5pts)?
+
+Expected number of jumps is roughly 7 per day.
+
+```{r}
+n <- 14
+lambda <- 5
+set.seed(249)
+k <- rpois(n, lambda) 
+total <- sum(k)
+lambda.hat <- total/length(k)
+
+#Expected number of jumps per day is 6.4286, or 7 jumps rounding upwards.
+```
+
+
+\vspace{5mm}
+
+### d. Program a log-likelihood function of the following form in `R` (0.5pts):
+
+```{r echo = T}
+#Log-likelihood = k*({-\lambda}) + ln(\lambda)\sum{k}-\sum{ln(k!)}
+#In english = k*(-lambda) + log(lambda)*sum(k) - sum(log(factorial(k)))
+
+lambda <- 5
+n <- 14
+set.seed(249)
+k <- log(rpois(n, lambda))         
+
+loglikelihood <- function(parameter, data) {
+  loglike <- n*(-parameter) + log(parameter)*sum(data) - sum(log(factorial(data)))
+  return(loglike)
+}
+
+```
+
+
+### e. Use the `optimize()` function to estimate the expected number of times Frank jumps on the kitchen counter per day based on the collected data (0.5pts).
+
+***Hint:*** You need to set an interval, try setting it fairly wide. Also, the optimize function minimizes a function by default. Is that what you want here?
+
+```{r}
+lambda <- 5
+n <- 14
+set.seed(249)
+k <- rpois(n, lambda)
+
+loglikelihood <- function(parameter, data) {
+  loglike <- n*(-parameter) + log(parameter)*sum(data) - sum(log(factorial(data)))
+  return(loglike)
+}
+
+optimize(loglikelihood,interval =  c(0,30), data=k, maximum=1)
+
+#The expected number of jumps per day is 6.4286, or about 7 if rounding upwards.
+```
+
+### f. For the previous questions, we used the log-likelihood, not the likelihood, to find the MLE. Would we find the same estimate using the likelihood? Briefly explain your answer. (0.5pts)
+
+Log-likelihood makes sure that the values we get are not too great, because it sums values together rather than multiplies them - so the equation remains computable. By using log-likelihood, the function is still maximised at the same parameter value as the regular likelihood.
+
+\vspace{10mm}
+
+
+
+Let's focus on another one of Franks habits: He tends to be a picky eater. We can model how often Frank eats his food using the binomial distribution:
+
+\[p(x \mid \theta) = {n \choose x} \theta^x (1 - \theta)^{n - x},\]
+
+where Frank eats his food $x$ out of $n$ times, and $\theta$ is the probability of him eating his food. 
+
+\vspace{5mm}
+
+### g. To do a Bayesian analysis, we need a prior on $\theta$. Think about what an appropriate choice of prior would be. Consider what values parameter $\theta$ can possibly have, and which of these values seem likely (given Frank is still alive and looks fairly healthy). Decide on a distribution and set parameter values for this distribution. Then plot the distribution in R, for example using `curve()`, and briefly justify your choice (0.5pts).
+
+
+Although the initial equation is given as a binomial distribution, it would produce a discrete distribution.  We would rather model the proportions of successes in comparison to total trials, which can be a continuous variable. So a better distribution to use is the beta.
+
+If Frank is a picky eater while still being healthy, the probability of him eating something could be below 0.5 - so it's more likely he won't eat. However, we don't know how his pickyness is further defined, so values around the peak are also quite likely - there's no sharp peak in the distribution. Yet, values at the extremes would be unlikely - if Frank was very unlikely to eat anything given to him, he likely wouldn't be healthy, and if he was likely to eat everything, he likely wouldn't be described as a picky eater.
+
+```{r}
+curve(dbeta(x,2,3), xlim = c(0,1))
+
+```
+
+
+\vspace{5mm}
+
+### h. Suppose Freddy, Nina, and Jackson also come up with priors. Freddy wants to use a beta distribution with $\alpha = 0.6, \beta = 0.4$, Nina suggests $\alpha = \beta = 1$, and Jackson chooses $\alpha = 30$ and $\beta = 10$. Plot these prior distributions next to your choice (either as several lines within one plot or as separate panels for each prior, just make sure to label them well). Order the priors from least informative to most informative, and interpret for each of the priors what kind of eating behavior they express (1pt). 
+
+For each prior, explain what kind of eating behavior they suggest
+- Freddy: only extreme values are very likely. So either Frank eats everything or he eats nothing.
+- Nina: all values are equally likely (uniform prior). This suggests Nina doesn't know anything about Frank's eating behavior.
+- Jackson: values around 0.25 are most likely, and the distribution is very narrow. This means Jackson is quite certain that Frank eats 25% of the time he's given food.
+- Mine: see previous question.
+
+Order of priors from most to least informative - Jackson, Freddy, me, Nina. 
+
+
+```{r}
+# Distributions
+curve(dbeta(x,2,3), xlim = c(0,1), ylim = c(0,6.5), col=2, ylab='Probability density', xlab='Proportion of times Frank eats his food', main='Probability Frank will eat his food')
+
+curve(dbeta(x, 0.4, 0.6), xlim=c(0,1), col=3, add=TRUE) # Freddy 
+
+curve(dbeta(x, 1, 1), xlim=c(0,1), col=4, add=TRUE) # Nina
+
+curve(dbeta(x, 10, 30), xlim=c(0,1), col=5, add=TRUE) # Jackson
+
+legend(x='topright', lty=1, legend = c('Me','Freddy', 'Nina', 'Jackson'), col=c(2,3,4,5))
+
+```
+
+
+\vspace{5mm}
+
+### i. Let's explore how we get from prior to posterior starting with Nina's prior. Produce a panel plot as Figure 5.5 (only the continuous panels on the right) in Lambert’s book using the binomial probability model and Nina's prior (1pt). For this figure, suppose we observe that Frank eats his food $x = 7$ out of $n = 10$ times. Make sure to use the right labels for each panel, x- and y-axis.
+
+***Hint:*** Lambert writes: "Each value of $\theta$ along the prior curve (top panel) is multiplied by the corresponding value of the likelihood (middle) to calculate the numerator of Bayes’ rule.
+The numerator is then normalised to produce the posteriors shown in the bottom panel."
+In this case, the easiest way to correctly normalize is to compute the integral of the numerator (prior $\times$ likelihood) and then divide the numerator by that value.
+
+```{r}
+s <- 7    # successes
+n <- 10   # trials
+
+# Likelihood:
+theta <- seq(0,1,0.01)
+
+likelihood.theta <- c()    
+likelihood <- function(s,n){  
+  likelihood.theta <- dbinom(s,n,theta)
+  return(likelihood.theta)
+}
+
+# Posterior shape:
+post_shape <- function(theta, s, n){
+  dbinom(s,n,theta) * dbeta(theta, 1, 1)
+}
+
+# Normalizing constant:
+normconst <- integrate(post_shape, lower=0, upper=1, s=7, n=10)$value
+
+# Posterior distribution
+posterior <- post_shape(theta, s=7, n=10)/normconst
+
+# Plotting everything
+layout(matrix(1:3),3,1)
+
+curve(dbeta(x, 1, 1), xlim=c(0,1), col=4, main='Prior', ylab='probability density', xlab=expression('theta'))
+
+plot(x=theta, y=likelihood(7,10), type='l', ylab = 'likelihood', xlab = expression(theta), main = 'Likelihood')
+
+plot(x=theta, y=posterior, type='l', ylab = 'probability density', xlab = expression(theta), main = 'Posterior')
+
+```
+
+
+\vspace{5mm}
+
+### j. What happens if more data on Frank's eating habits are observed? Suppose we observe Frank eats 785 times out of 1000 times. Update the plots from question 2c, and also add a prior-posterior plot for Jackson's prior. Does the prior have an effect? (0.5pts)
+
+With a small sample, the prior can have a large effect on the posterior, especially if it's as informative as Jackson's. Nina's uniform prior leaves it for the likelihood to determine the shape and location of peak. But as sample size grows, the importance of the prior diminishes and the likelihood dominates more.
+
+```{r}
+s.2 <- 785
+n.2 <- 1000
+
+# Likelihood:
+theta <- seq(0,1,0.01)
+
+likelihood.theta2 <- c()    
+
+likelihood2 <- function(s.2,n.2){  
+  likelihood.theta2 <- dbinom(s.2,n.2,theta)
+  return(likelihood.theta2)
+}
+
+# Posterior by Nina:
+post_shape_nina <- function(theta, s.2, n.2){
+  dbinom(s.2,n.2,theta) * dbeta(theta, 1, 1)
+}
+normconst2 <- integrate(post_shape_nina, lower=0, upper=1, s.2=785, n.2=1000)$value
+posterior_nina <- post_shape_nina(theta, s.2=785, n.2=1000)/normconst2
+
+# Posterior by Jackson:
+post_shape_jackson <- function(theta, s.2, n.2){
+  dbinom(s.2,n.2,theta) * dbeta(theta, 30, 10)
+}
+normconst3 <- integrate(post_shape_jackson, lower=0, upper=1, s.2=785, n.2=1000)$value
+posterior_jackson <- post_shape_jackson(theta, s.2=785, n.2=1000)/normconst3
+
+
+# Plotting Nina
+layout(matrix(1:3),3,1)
+curve(dbeta(x, 1, 1), xlim=c(0,1), col=4, main='Prior by Nina', ylab='probability density', xlab=expression('theta'))  #Prior by Nina
+plot(x=theta, y=likelihood2(s.2,n.2), type='l', ylab = 'likelihood', xlab = expression(theta), main = 'Likelihood')
+plot(x=theta, y=posterior_nina, type='l', ylab = 'probability density', xlab = expression(theta), main = 'Posterior by Nino')  #Posterior by Nina
+
+```
+
+
+```{r}
+#Plotting Jackson
+layout(matrix(1:3),3,1)
+curve(dbeta(x, 30, 10), xlim=c(0,1), main='Prior by Jackson', ylab='probability density', xlab=expression('theta'))  #Prior by Jackson
+plot(x=theta, y=likelihood2(s.2,n.2), type='l', ylab = 'likelihood', xlab = expression(theta), main = 'Likelihood')
+plot(x=theta, y=posterior_jackson, type='l', ylab = 'probability density', xlab = expression(theta), main = 'Posterior by Jackson')  #Posterior by Jackson
+```
+
+
+### k. Last time Julia checked, Frank ate his food 7 out of 12 times. Assuming we want to use a Beta distribution as a prior for the next round of observations, which values would you choose for the parameters $\alpha$ and $\beta$ to directly take these data into account (0.5pts)? Briefly explain your choice.
+
+If we take the 7 successes out of 12 as an expected probability Frank will eat, the probability is 0.5833. we could use this as maximum likelihood estimate to derive the alpha and beta. By playing around with the alpha and beta values, we can model a suitable distribution curve with a mean of 0.5833. As for the steepness of the peak, we could expect that the 7 successes out of 12 trials is quite a good estimator of cat behavior, in which cases theta values close to 0.5833 are very likely, but values roughly under 0.3 or above 0.8 not so much. Hence, most of the probability mass is allocated between 0.3<theta<0.8.
+
+```{r}
+prob.eats <- 7/12
+curve(dbeta(x,6.5,5), xlim=c(0,1), ylab='Probability density', xlab = expression(theta))
+abline(v=prob.eats)
+
+```
+
+\vspace{5mm}
+
+### l. Let's take a closer look at Jackson's prior (Beta with $\alpha = 30$ and $\beta = 10$), and the original set of $x = 7$ out of $n = 10$ observations. Note that the mean of the beta prior is located at $\frac{\alpha}{\alpha + \beta}$, and the mean of the posterior is located at $\frac{\alpha + x}{\alpha + x + \beta + (n - x)}$. Plot the distributions and their means. Based on the location of the distributions' means and the shape of the posterior distribution, make an informed guess about what sort of distribution the posterior is? (up to 1pt)
+
+Since the mean of the posterior distribution includes both alpha and beta, I'd assume it's a form of beta distribution. I also multiply the beta distribution with a binomial one to get the posterior distribution, so I wouldn't expect it to be a 'pure' beta distribution. This could be a beta-binomial distribution, but the definition of the mean differs from the one found in Wikipedia. Yet, the end result seems identical to Jackson's prior distribution, which is a beta distribution.
+
+Therefore, the posterior distribution is a beta distribution.
+
+
+```{r}
+# Jackson's mean
+alpha <- 30
+beta <- 10
+jackson.mean <- alpha/(alpha+beta)
+
+# Posterior distribution and mean
+n <- 10
+x1 <- 7
+posmean <- (alpha+x1)/(alpha+x1+beta+(n-x1))
+
+post_jackson <- function(theta, n, x1){
+  dbinom(x1,n,theta) * dbeta(theta, alpha, beta)
+}
+normconst4 <- integrate(post_jackson, lower=0, upper=1, x1=x1, n=n)$value
+poster_jackson <- post_jackson(theta, x1=x1, n=n)/normconst4
+
+layout(matrix(1:2),2,1)
+curve(dbeta(x,alpha,beta), xlim=c(0,1), xlab=expression(theta), ylab='probability density', main='Prior by Jackson')
+abline(v=jackson.mean)
+plot(y=poster_jackson, x=theta, x1=7, n=10, alpha=30, beta=10, type='l', ylab='Probability density', xlab=expression(theta), main='Posterior: p(theta|data)')
+abline(v=posmean)
+
+```
+
+
+
