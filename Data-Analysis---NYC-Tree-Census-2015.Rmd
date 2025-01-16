@@ -1,0 +1,270 @@
+---
+title: "Data Analysis 1"
+author: "Eeva Hökkä"
+date: "2025-01-15"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+This exercise is to analyse the NYC tree census (2015) dataset. The questions to be explored are:
+
+1. Which tree species are the most and least prevalent in NYC?
+2. Is there a relationship between a tree's location (borough) and its health status?
+3. How does tree diversity vary across different neighborhoods in NYC?
+4. Are there any observable trends between tree size and health?
+5. Which neighborhoods in NYC have the highest and lowest tree health?
+
+Reading in the data, downloading packages.
+```{r, echo = FALSE}
+library(tidyverse)
+library(readr)
+library(skimr)
+library(MASS)
+library(car)
+library(caret)
+library(nnet)
+
+data <- read_csv("2015_Street_Tree_Census_-_Tree_Data_20250115.csv"
+                 , show_col_types = FALSE)
+
+```
+
+Basic descriptives on all variables.
+```{r}
+skim(data)
+
+```
+
+### 1. Which tree species are the most and least prevalent in NYC?
+
+The most prevalent tree species in NYC is the London planetree. The least prevalent is Virginia pine.
+
+```{r}
+# Most prevalent = London planetree
+data %>%
+  group_by(spc_common) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
+
+# Least prevalent = Virginia pine
+data %>%
+  group_by(spc_common) %>%
+  summarise(n = n()) %>%
+  arrange(n)
+
+```
+
+Delete NAs in tree species and health status from the file.
+
+```{r}
+# Number of NAs = 31,619
+data %>%
+  filter(is.na(spc_common)) %>%
+  summarise(n = n())
+  
+# Delete NAs from species and health
+data <- data %>%
+  filter(!is.na(spc_common), !is.na(health))
+
+# Number of stumps and dead trees --> none, no need to delete
+data %>%
+  filter(status == "Stump" | status == "Dead") %>%
+  summarise(n = n())
+
+```
+
+
+### 2. Is there a relationship between a tree's location (borough) and its health status?
+
+Looking at the plot, there does not seem to be a strong relationship between tree health and the borough the tree is located in. However, testing for this relationship with Pearson Chi-square test, the hypothesis for no relationship is rejected. Given the variable 'health' is an ordered variable while 'borough' is nominal, an alternative method to assess the relationship is by using ordered logistic regression. 
+
+The model shows that there seems to be a relationship between tree health and the borouhg. Trees located in Bronx have higher odds for having a higher health status than in other boroughs. 
+
+```{r}
+# How many boroughs? 5
+data %>% 
+  summarise(n = n_unique(borough))
+
+# Plot the proportion of trees in given health status per borough
+data %>%  
+  ggplot(aes(x = factor(health, levels = c("Poor", "Fair", "Good")), fill = borough)) +
+  geom_bar(position = "fill") + # Displays proportions
+  labs(x = "Tree Health",
+       fill = "Borough", 
+       y = "Proportion", 
+       title = "Proportion of trees per borough and tree health")
+
+## Testing for the relationship in 2 ways
+data_test <- data %>%
+  mutate(health = factor(health, ordered = TRUE)
+         , borough = factor(borough))
+
+# Contingency table
+table(data_test$health, data_test$borough)
+
+# Chisquare test to measure dependence between two categorical variables --> significant
+chisq.test(table(data_test$health, data_test$borough))
+
+# Ordinal logistic regression --> used when the other categorical variable is ordinal and another nominal
+model_olr <- polr(health ~ borough, data = data_test, Hess = TRUE)
+
+# Model summary
+summary(model_olr)
+
+# Odd ratios
+exp(coef(model_olr))
+
+```
+
+
+### 3. How does tree diversity vary across different neighborhoods in NYC?
+
+In this exercise, tree diversity is defined in terms of species evenness, i.e. how many of the trees in a neighborhood represent each species. For simplicity, the highest proportion of tree representation in a neighbourhood is picked to represent its tree diversity. 
+
+Most of the neighborhoods have high tree diversity, as the highest single tree species proportion in a neighborhood is on average 0.19, while mode is 0.13. An exception is Stuyvesant Town - Cooper Village, where the proportion of honeylocusts out of all trees in the neighbourhood is 0.67.
+
+```{r}
+# What is the proportion of each species represented in a neighborhood?
+props <- data %>%
+  group_by(nta_name) %>%
+  summarise(total_trees = n(), spc_common = spc_common) %>%
+  group_by(nta_name, spc_common) %>%
+  summarise(trees_per_species = n(), total_trees = total_trees) %>%
+  unique() %>%
+  summarise(prop_species = round(trees_per_species/total_trees, 3))
+
+# Simple diversity index: What's the highest proportion of a single tree species in a neighborhood?
+props %>%
+  group_by(nta_name) %>%
+  filter(prop_species == max(prop_species)) %>%
+  arrange(desc(prop_species))
+
+# Mean proportion
+props %>%
+  group_by(nta_name) %>%
+  filter(prop_species == max(prop_species)) %>%
+  ungroup() %>%
+  summarise(mean = mean(prop_species))
+
+# Plot this diversity index
+props %>%
+  group_by(nta_name) %>%
+  filter(prop_species == max(prop_species)) %>%
+  arrange(desc(prop_species)) %>%
+  ggplot(aes(x = prop_species)) +
+  geom_histogram(binwidth = 0.01, fill = "lightblue", col = "black") +  
+  geom_vline(aes(xintercept = mean(prop_species)), col = "red") +
+  scale_x_continuous(n.breaks = 20) +
+  annotate(geom = "text", x = props$prop_species[props$prop_species == max(props$prop_species)], 
+           y = 8, size = 3, angle = 90,
+           label = props$nta_name[props$prop_species == max(props$prop_species)]) +
+  labs(x = "Diversity index of the neighborhood",
+       y = "Number of neighborhoods given diversity index",
+       title = "Simple Diversity Index",
+       subtitle = "What's the highest proportion of a single tree species in a neighborhood? (Mean in red)")
+
+```
+
+
+### 4. Are there any observable trends between tree size and health?
+
+As the health of trees increases from Poor to Good, so does the tree size.
+
+```{r}
+# Tree size measured as tree diameter (tree_dbh). Including only 95% of size observations per health category for better visualisations.
+data %>%
+  group_by(health) %>%
+  filter(!is.na(health)) %>%
+  mutate(max_tree_dbh = quantile(tree_dbh, .95, na.rm = TRUE)) %>% 
+  filter(tree_dbh <= max_tree_dbh) %>%
+  ggplot(aes(y = tree_dbh, x = factor(health, levels = c("Poor", "Fair", "Good")), 
+             fill = factor(health, levels = c("Poor", "Fair", "Good")))) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("red", "yellow", "green")) +
+  scale_y_continuous(n.breaks = 5) +
+  labs(y = "Tree size",
+       x = "Tree health",
+       title = "Trends between tree health and tree size",
+       subtitle = "Differences in tree sizes between tree health statuses (95% of observations included)",
+       fill = "Tree health") +
+  theme(legend.position = "none")
+
+```
+
+(--Not required but testing for fun--)
+When statistically assessing relationship between categorical & continuous variable, one would use ANOVA.
+
+Assumptions:
+  1. Independence of observations --> ok
+  2. Normality --> ok (since large samples)
+  3. Homogeneity of variances --> check
+  4. Outliers --> check
+  
+If assumptions are not met, one method is to use Kruskal-Wallis test to see if there are significant differences between the health groups. However, this test will not be conducted here.
+```{r}
+# Outliers --> YES --> convert to logarithmic scales
+data %>%
+  filter(!is.na(health)) %>%
+  ggplot(aes(y = tree_dbh, x = factor(health, levels = c("Poor", "Fair", "Good")), 
+             fill = factor(health, levels = c("Poor", "Fair", "Good")))) +
+  geom_boxplot() +
+  scale_y_continuous(n.breaks = 5) +
+  labs(y = "Tree size",
+       x = "Tree health",
+       title = "Outliers in tree health given tree size",
+       fill = "Tree health")
+
+# Logarithmic scale --> still leaves outliers --> use Kruskal-Wallis
+data %>%
+  filter(!is.na(health)) %>%
+  ggplot(aes(y = log(tree_dbh), x = factor(health, levels = c("Poor", "Fair", "Good")), 
+             fill = factor(health, levels = c("Poor", "Fair", "Good")))) +
+  geom_boxplot() +
+  scale_y_continuous(n.breaks = 5) +
+  labs(y = "Tree size",
+       x = "Tree health",
+       title = "Outliers in tree health given tree size",
+       fill = "Tree health")
+
+# Homogeneity of variances --> REJECTED --> use Kruskal Wallis
+leveneTest(tree_dbh ~ health, data)
+
+```
+
+
+### 5. Which neighborhoods in NYC have the highest and lowest tree health?
+
+The neighborhood with highest proportion of healthy trees ('Good') is Stuyvesant Town-Cooper Village. 
+The neighborhood with highest proportion of unhealthy trees ('Poor') is Breezy Point-Belle Harbor-Rockaway Park-Broad Channel.
+
+```{r}
+# Highest tree health - top 5
+data %>%
+  group_by(nta_name) %>%
+  summarise(total_trees = n(), health = health) %>%
+  ungroup() %>%
+  group_by(nta_name, health) %>%
+  summarise(n_trees = n(), total_trees = total_trees) %>%
+  unique() %>%
+  summarise(prop_health = round(n_trees / total_trees, 3)) %>%
+  filter(health == "Good") %>%
+  arrange(desc(prop_health)) %>%
+  head(5)
+  
+# Lowest tree health - top 5
+data %>%
+  group_by(nta_name) %>%
+  summarise(total_trees = n(), health = health) %>%
+  ungroup() %>%
+  group_by(nta_name, health) %>%
+  summarise(n_trees = n(), total_trees = total_trees) %>%
+  unique() %>%
+  summarise(prop_health = round(n_trees / total_trees, 3)) %>%
+  filter(health == "Poor") %>%
+  arrange(desc(prop_health)) %>%
+  head(5)
+
+```
