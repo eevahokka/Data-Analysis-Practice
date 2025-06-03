@@ -1,17 +1,14 @@
-###
-Python exercises
-3 June 2025
-###
+# Python exercises
+# 3 June 2025
     
-###
- 1. First Duplicate
-Problem: Given an array A of integers, return the first number that appears more than once. 
-If no number appears more than once, return -1.
 
-A = [2, 1, 3, 5, 3, 2] → Output: 3
-A = [1, 2, 3, 4] → Output: -1
+# 1. First Duplicate
+# Problem: Given an array A of integers, return the first number that appears more than once. 
+# If no number appears more than once, return -1.
 
-###
+# Example:
+# A = [2, 1, 3, 5, 3, 2] → Output: 3
+# A = [1, 2, 3, 4] → Output: -1
 
 A =  [1, 2, 3, 4, 4, 2]
 
@@ -29,15 +26,15 @@ def dupli(array):
 dupli(A)
 
 
-###
-2. Missing Number in Sequence
-Problem:
-Given an array of size N containing numbers from 1 to N+1 with one number missing, 
-return the missing number.
 
-A = [2, 3, 1, 5] → Output: 4
+# 2. Missing Number in Sequence
+# Problem:
+# Given an array of size N containing numbers from 1 to N+1 with one number missing, 
+# return the missing number.
 
-###
+# Example:
+# A = [2, 3, 1, 5] → Output: 4
+
 
 array = [2, 1, 4, 5]
 
@@ -67,16 +64,12 @@ def miss(array):
 miss(array)
 
 
-###
-3. Find All Missing Positive Integers
-Problem:
-Given an unsorted array, find all positive integers that are missing in the range 1..N.
+# 3. Find All Missing Positive Integers
+# Problem:
+# Given an unsorted array, find all positive integers that are missing in the range 1..N.
 
-Example:
-
-A = [4, 3, 2, 7, 8, 2, 3, 1] → Output: [5, 6]
-
-###
+# Example:
+# A = [4, 3, 2, 7, 8, 2, 3, 1] → Output: [5, 6]
 
 array2 = [4, 3, 2, 7, 8, 2, 3, 1, 9, 11]
 
@@ -117,17 +110,13 @@ def miss_pos(array):
 miss_pos(array2)
 
 
+# 4. Count Distinct Integers
+# Problem:
+# Return the number of distinct integers in the array.
 
-###
-4. Count Distinct Integers
-Problem:
-Return the number of distinct integers in the array.
+# Example:
+# A = [2, 1, 1, 2, 3, 1] → Output: 3
 
-Example:
-
-A = [2, 1, 1, 2, 3, 1] → Output: 3
-
-###
 
 array3 = [2, 1, 3, 4, 1]
 
@@ -241,16 +230,13 @@ def perm(array):
 perm(array4)
 
 
-###
-6. Longest Consecutive Sequence
-Problem:
-Given an unsorted array, find the length of the longest sequence of consecutive numbers.
+# 6. Longest Consecutive Sequence
+# Problem:
+# Given an unsorted array, find the length of the longest sequence of consecutive numbers.
 
-Example:
+# Example:
+# A = [100, 4, 200, 1, 3, 2] → Output: 4 (because 1,2,3,4)
 
-A = [100, 4, 200, 1, 3, 2] → Output: 4 (because 1,2,3,4)
-
-###
 
 array5 = [100, 4, 200, 1, 2, 3, 5]
 
@@ -289,17 +275,16 @@ def conseq(array):
 
 conseq(array5)
 
-###
-7.  Smallest positive integer
-Problem
-Write a function that, given an array A of N integers, returns the smallest positive integer that does NOT occur in A.
 
-Example:
-if A = [1, 3, 6, 4, 1, 2], the function returns 5
-If A = [1, 2, 3, 4, 5], the function returns 6
-If A = [-10, −1, −3], the function returns 1
+# 7.  Smallest positive integer
+# Problem
+# Write a function that, given an array A of N integers, returns the smallest positive integer that does NOT occur in A.
 
-###
+# Example:
+# if A = [1, 3, 6, 4, 1, 2], the function returns 5
+# If A = [1, 2, 3, 4, 5], the function returns 6
+# If A = [-10, −1, −3], the function returns 1
+
 
 def solution(A):
   N = len(A)
@@ -324,27 +309,23 @@ def solution(A):
   return N + 1
 
 
-### 
-Explanation:
-Input: [1, 3, 6, 4, 1, 2]
-N = 6
-Initialize found = [0, 0, 0, 0, 0, 0, 0] (7 values)
+# Explanation:
+# Input: [1, 3, 6, 4, 1, 2]
+# N = 6
+# Initialize found = [0, 0, 0, 0, 0, 0, 0] (7 values)
 
-Loop through each number:
-1 → mark found[0] = 1 (i.e. found[1-1])
-3 → mark found[2] = 1 
-6 → mark found[5] = 1
-4 → mark found[3] = 1
-1 → already marked
-2 → mark found[1] = 1
-Now found = [1, 1, 1, 1, 0, 1, 0]
+# Loop through each number:
+# 1 → mark found[0] = 1 (i.e. found[1-1])
+# 3 → mark found[2] = 1 
+# 6 → mark found[5] = 1
+# 4 → mark found[3] = 1
+# 1 → already marked
+# 2 → mark found[1] = 1
+# Now found = [1, 1, 1, 1, 0, 1, 0]
 
-Loop through found:
-Index 0 → 1
-Index 1 → 1
-Index 2 → 1
-Index 3 → 1
-Index 4 → 0 → Return 5 (i.e. i + 1) 
-###
-
-
+# Loop through found:
+# Index 0 → 1
+# Index 1 → 1
+# Index 2 → 1
+# Index 3 → 1
+# Index 4 → 0 → Return 5 (i.e. i + 1) 
