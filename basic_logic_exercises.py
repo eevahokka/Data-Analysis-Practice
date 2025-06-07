@@ -1,5 +1,5 @@
 # Python exercises
-# 3 June 2025
+# June 2025
     
 
 # 1. First Duplicate
@@ -329,3 +329,396 @@ def solution(A):
 # Index 2 → 1
 # Index 3 → 1
 # Index 4 → 0 → Return 5 (i.e. i + 1) 
+
+
+#### SET 2 ####
+
+### 1. Write a function that returns the second smallest number in a list.
+
+a = [2, 6, -4, -10, 5, 6, 10]
+
+def second_smallest(array):
+    
+    # order the elements
+    sorted_array = sorted(array)
+    
+    # return second smallest
+    return sorted_array[1]
+
+
+second_smallest(a)
+
+### 2. Given a list of employees with department IDs, group them into a dictionary 
+### by department.
+
+employees = [
+    {"name": "Jessica", "dept_id": 3},
+    {"name": "Bob", "dept_id": 2},
+    {"name": "Mollie", "dept_id": 2},
+    {"name": "John", "dept_id": 1}
+    ]
+
+dept_groups = {}
+
+# loop over each row in list
+for emp in employees:
+    
+    # first, take out each dept_id and name as objects FROM THE INDEXED ROW
+    dept_id = emp["dept_id"]
+    name = emp["name"]
+    
+    # if dept_id not yet in dept_groups, add it in
+    if dept_id not in dept_groups:
+        dept_groups[dept_id] = []
+    
+    # add the name regardless
+    dept_groups[dept_id].append(name)
+
+print(dept_groups)
+
+
+### 3. Given a dictionary of employee hours, return the name(s) of the employee(s) 
+### with the most hours.
+
+# create dataset - note here, it's just keys and values
+hours = {
+    "Alice": 35,
+    "Bob": 42,
+    "Charlie": 42,
+    "Diana": 30
+}
+
+# find out the max hours worked by checking only the values for keys
+max_hours = max(hours.values())
+
+# store names and hours, if fit max_hours, into an empty dictionary
+top_employees = []
+
+# loop over each row, i.e. key, in hours to see if fits max_hours
+for hour in hours:
+    
+    # if the indexed key in the dictionary has value fitting max_hours
+    if hours[hour] == max_hours:
+        # add the key (i.e. name) into top_employees
+        top_employees.append(hour)
+        
+
+print(top_employees)
+
+
+### 4. Given a list of integers and a target number, count how many unique pairs 
+### of elements sum up to the target.
+### Example: List = [1, 5, 7, -1, 5]
+### Target = 6 → Answer = 3 ((1, 5), (7, -1), (1st 5, 1st 1))
+### Hint: first check for difference and whether that's already been seen; then add element to seen
+
+
+list1 = [1, 5, 7, -1, 5]
+target1 = 6
+
+def unique_pairs(array, target):
+    
+    # create an empty set to store the numbers in for lookup, and initiate counter
+    seen = {}
+    counter = 0
+    
+    # for each element in the array
+    for element in array:
+        
+        # calculate the difference with target, to get the missing pair
+        difference = target - element
+        
+        # then see if the difference is in seen
+        if difference in seen:
+            
+            # add the value indexed by difference to counter
+            counter += seen[difference]
+            
+        # if the element itself is in seen
+        if element in seen:
+            
+            # update its count in the dictionary
+            seen[element] += 1
+        
+        # otherwise, add element to dictionary with value 1
+        else:
+            seen[element] = 1
+                
+    return counter
+
+unique_pairs(list1, target1)
+
+
+### 3. Rotate Array
+### Given a list and an integer k, return the list rotated to the right by k steps.
+### Example: [1, 2, 3, 4, 5], k = 2 → [4, 5, 1, 2, 3]
+### pos:     [0, 1, 2, 3, 4]          [0, -4, -3, -2, -1]
+
+list2 = [1, 2, 3, 4, 5, 6, 7, 8]
+k = 11
+
+def rotator(array, k):
+    
+    # initiate new array
+    new_array = []
+    
+    # edge case: make sure N is not 0 so you're not dividing by it
+    N = len(array)
+    if N == 0:
+        return N
+    
+    # edge case: if k is larger than length of array, divide by length 
+    if k > N:
+        k = k % N
+    
+    # make a new array by adding two slices of original together
+    new_array = array[-k:] + array[:-k]
+    # above:    from 4 to 5  from 0 to 3
+
+    # return new array
+    return new_array
+
+rotator(list2, k)
+
+
+### 6. Find Peak Element
+### Given a list of integers, find any "peak" element — an element that is 
+### greater than both its neighbors.
+### (You may assume the list has at least 3 elements and ignore the ends.)
+### Example: [1, 3, 20, 4, 1] → return 20
+
+list3 = [1, 3, 20, 2, 5, 1]
+
+def peaky(list):
+    
+    # find length of list, set object for peak
+    N = len(list)
+    peaky = []
+    
+    # for each element on list, dont include first or last so comparison possible
+    for i in range(1, N-1):
+        
+        # compare with one before and one after
+        if (list[i-1] < list[i]) & (list[i+1] < list[i]):
+            
+            # place into peaky
+            peaky.append(list[i])
+            
+    return peaky
+
+peaky(list3)
+
+
+### 7. String Compression
+### Compress a string using the counts of repeated characters.
+### Example: "aaabbccccd" → "a3b2c4d1"
+### Note, not needed here: methods to break characters from string into list
+### [*stringy]; chars = [char for char in string]
+
+stringy = "aaabbccccdd"
+
+def strcomp(string):
+    
+    # initiate new string
+    new_string = ""
+    
+    # initiate counter
+    count = 1
+    
+    # for each character in the string
+    for char in range(1, len(string)):
+        
+        # compare if letter the same as previous
+        if string[char] == string[char-1]:
+            
+            # add to counter
+            count += 1
+        
+        # otherwise, add character and count to new string and reset count to 1
+        else:
+            new_string += string[char-1] + str(count)
+            count = 1
+
+    # add last character and it's count
+    new_string += string[char-1] + str(count)
+    
+    return new_string
+
+strcomp(stringy)
+
+
+
+### 8. Validate Brackets
+### Given a string of brackets ()[]{}, determine if the input is balanced 
+### (all opened brackets are closed properly).
+### Example: "{[()]}" → valid; "{[(])}" → invalid
+### pos:      0 1 2 3 4 5
+###           0-5-4-3-2-1
+
+brac1 = "{[()]}"
+brac2 = "{[(])}"
+
+
+def validation(string):
+    
+    # create a comparison dictionary and empty one for closing bracket storing
+    comparison = {"}": "{", "]": "[", ")": "("}
+    store = []
+    
+    # loop over each character
+    for char in string:
+        
+        # if character is an OPENING bracket 
+        if char in comparison.values():
+        
+            # add it in to the empty dictionary
+            store.append(char)
+            
+        # else if it is a CLOSING bracket
+        elif char in comparison:
+
+            # and if not in the store, 
+            # or the last opening character [-1] added is not matching with the current closing character
+            if not store or store[-1] != comparison[char]:  
+            
+                # return with message "invalid"
+                return "invalid"
+            
+            # otherwise, pop it out
+            else:
+                store.pop()
+            
+    return "valid"
+
+validation(brac2)
+
+
+### 9. First Non-Repeating Character
+### Given a string, return the first character that doesn’t repeat. 
+### If all characters repeat, return None.
+### Example: Input: "aabbccdeff"; Output: "d"
+
+stringy2 = "aaabbccdeff"
+
+def non_repeat(string):
+    
+    # create an empty dictionary for lookup, initiate counter
+    seen = {}
+    counter = 1
+    N = len(string)
+    
+    # for each character in the string
+    for char in range(1, N):
+    
+        # check if it's NOT the same as previous
+        if string[char] != string[char-1]:
+        
+            # add the counter into seen (you don't need to store the character), then reset counter
+            seen[string[char-1]] = counter
+            counter = 1
+            
+        # else, add +1 into counter
+        else:
+            counter += 1
+
+    # add the last character in
+    seen[string[char-1]] = counter
+    
+    # loop over each character in the STRING
+    for char in string:
+        
+        # if the character has a value of 1 (use get to find it in dict)
+        if seen.get(char) == 1:
+            # return the character - first one only returned
+            return char
+
+non_repeat(stringy2)
+
+
+### 10. 2. Count Digits
+### Write a function that returns the number of digits in an integer (do not use len(str(n))).
+### Example: Input: 10456; Output: 5
+
+input1 = -1047
+
+def digit_count(input):
+    
+    # take absolute value to handle negatives
+    input = abs(input)
+    
+    # initiate counter
+    counter = 0
+    
+    #
+    if input == 0:
+        return 1
+    
+    # while the input is greater than 0
+    while input > 0:
+        
+        # divide the input by 10 (as each digit is some multiple of 10)
+        input = input//10
+        # and add 1 to counter
+        counter += 1
+    
+    return counter
+
+digit_count(input1)
+
+
+### 11. Histogram Dictionary
+## Write a function that takes a list of words and returns a dictionary with the frequency of each word.
+### Example: Input: ["apple", "banana", "apple", "orange", "banana", "apple"]
+### Output: {'apple': 3, 'banana': 2, 'orange': 1}
+
+input2 = ["apple", "banana", "apple", "orange", "banana", "orange", "apple"]
+
+def hist_dict(input):
+    
+    # initialize empty dictionary and counter
+    dict = {}
+    counter = 0
+    
+    # for word in input:
+    for word in input:
+        
+        # if the word is NOT in dictionary
+        if word not in dict:
+        
+            # add the word in, set counter to 1, and add the counter
+            dict[word] = []
+            counter = 1
+            dict[word] = counter
+            
+        # if it is, update the counter
+        else:
+            dict[word] +=1
+        
+    return dict
+
+hist_dict(input2)
+
+
+### 12. Reverse Words in Sentence
+### Given a sentence, reverse the order of the words.
+### Example: Input: "the quick brown fox"; Output: "fox brown quick the"
+
+input3 = "the quick brown fox"
+
+def revstr(string):
+    
+    # split the sentence into elements
+    string = string.split(" ")
+
+    # reversed the words --> you don't need to save first an empty list
+    new_string = string[::-1]
+
+    # turn into one string
+    new_string = ' '.join(new_string)
+    
+    # return into one string
+    return new_string
+
+revstr(input3)
+
+
