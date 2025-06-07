@@ -345,8 +345,30 @@ def second_smallest(array):
     # return second smallest
     return sorted_array[1]
 
-
 second_smallest(a)
+
+# without using sort
+def secsmall_nosort(array):
+    
+    # Set variables smallest & seconfsmallest to be very larg
+    smallest = float('inf')
+    secondsmallest = float('inf')
+    
+    # for number in array
+    for num in array:
+        
+        # check if it is smaller than smallest and smaller than second smallest, update
+        if num < smallest:
+            secondsmallest = smallest
+            smallest = num
+        elif smallest < num < secondsmallest:
+            secondsmallest = num
+    
+    # return    
+    return secondsmallest
+
+secsmall_nosort(a)
+
 
 ### 2. Given a list of employees with department IDs, group them into a dictionary 
 ### by department.
